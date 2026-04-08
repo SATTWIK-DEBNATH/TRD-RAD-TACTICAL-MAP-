@@ -42,6 +42,7 @@ const TacticalMap: React.FC<MapProps> = ({
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
   const [airports, setAirports] = React.useState<any[]>([]);
+  const [useFallbackStyle, setUseFallbackStyle] = React.useState(false);
 
   // Initialize Map
   useEffect(() => {
@@ -80,6 +81,15 @@ const TacticalMap: React.FC<MapProps> = ({
       map.current.on('dblclick', (e: maplibregl.MapMouseEvent) => {
         onDoubleClick(e.lngLat.lng, e.lngLat.lat);
       });
+
+      // Handle Authentication / Loading Errors
+      map.current.on('error', (e) => {
+        // If Stadia Maps returns 401 (Unauthorized) or 403 (Forbidden)
+        if (e.error?.status === 401 || e.error?.status === 403 || e.error?.message?.includes('401')) {
+          console.warn('Tactical Map Authorization Failed. Switching to Safe Tactical Fallback...');
+          setUseFallbackStyle(true);
+        }
+      });
     } catch (error) {
       console.error('Error initializing map:', error);
     }
@@ -97,7 +107,11 @@ const TacticalMap: React.FC<MapProps> = ({
     if (!map.current) return;
 
     const activeStyle = Object.values(MAP_STYLES).find(s => s.id === style) || MAP_STYLES.TACTICAL;
-    const isRaster = activeStyle.url.includes('{x}') || activeStyle.url.includes('{z}');
+    const styleUrl = useFallbackStyle && style === 'tactical' 
+      ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+      : activeStyle.url;
+    
+    const isRaster = styleUrl.includes('{x}') || styleUrl.includes('{z}');
 
     if (isRaster) {
       // For raster tiles, we define a basic style object
@@ -106,7 +120,7 @@ const TacticalMap: React.FC<MapProps> = ({
         sources: {
           'raster-tiles': {
             type: 'raster',
-            tiles: [activeStyle.url],
+            tiles: [styleUrl],
             tileSize: 256
           }
         },
@@ -120,9 +134,9 @@ const TacticalMap: React.FC<MapProps> = ({
       });
     } else {
       // For vector styles
-      map.current.setStyle(activeStyle.url);
+      map.current.setStyle(styleUrl);
     }
-  }, [style]);
+  }, [style, useFallbackStyle]);
 
   // Sync camera
   useEffect(() => {

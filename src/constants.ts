@@ -2,7 +2,7 @@ export const MAP_STYLES = {
   TACTICAL: {
     id: 'tactical',
     name: 'Tactical Dark',
-    url: 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json'
+    url: `https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json${import.meta.env.VITE_STADIA_API_KEY ? `?api_key=${import.meta.env.VITE_STADIA_API_KEY}` : ''}`
   },
   SATELLITE: {
     id: 'satellite',
