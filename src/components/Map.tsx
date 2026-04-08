@@ -33,8 +33,6 @@ const TacticalMap: React.FC<MapProps> = ({
   earthquakes,
   naturalEvents,
   iss,
-  isr,
-  logistics,
   center,
   zoom,
   onDoubleClick,
